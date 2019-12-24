@@ -1,7 +1,6 @@
 package raft
 
 type RequestVoteArgs struct {
-	// Your data here (2A, 2B).
 	Term			int
 	CandidateId		int
 	LastLogIndex	int
