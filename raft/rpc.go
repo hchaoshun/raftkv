@@ -1,6 +1,7 @@
 package raft
 
 type RequestVoteArgs struct {
+	// Your data here (2A, 2B).
 	Term			int
 	CandidateId		int
 	LastLogIndex	int
@@ -51,6 +52,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 				reply.VoteGranted = true
 				reply.Term = rf.currentTerm
+				rf.persist()
 				return
 			}
 		}
@@ -111,4 +113,5 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if oldCommitIndex < rf.commitIndex {
 		rf.notifyApplyMsg <- struct{}{}
 	}
+	rf.persist()
 }
