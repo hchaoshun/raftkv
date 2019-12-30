@@ -66,13 +66,14 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	//DPrintf("args: %v", args)
+	//DPrintf("pass")
 	if rf.currentTerm > args.Term {
 		reply.Term, reply.Success = rf.currentTerm, false
 		return
 	}
 
-	electionTime := generateRandDuration(electionTimeout)
-	rf.resetElectionTimer(electionTime)
+	rf.resetElectionTimer(generateRandDuration(electionTimeout))
 	//DPrintf("%v reset election timer to %v", rf.me, electionTime)
 	rf.currentLeader = args.LeaderId
 	rf.state = Follower
