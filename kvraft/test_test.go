@@ -46,7 +46,9 @@ func run_client(t *testing.T, cfg *config, me int, ca chan bool, fn func(me int,
 	ok := false
 	defer func() { ca <- ok }()
 	ck := cfg.makeClient(cfg.All())
+	//DPrintf("test: run_client: run client")
 	fn(me, ck, t)
+	//DPrintf("test: run_client: fn is done")
 	ok = true
 	cfg.deleteClient(ck)
 }
@@ -59,9 +61,11 @@ func spawn_clients_and_wait(t *testing.T, cfg *config, ncli int, fn func(me int,
 		go run_client(t, cfg, cli, ca[cli], fn)
 	}
 	// log.Printf("spawn_clients_and_wait: waiting for clients")
+	//DPrintf("spawn_clients_and_wait: waiting for clients")
 	for cli := 0; cli < ncli; cli++ {
 		ok := <-ca[cli]
 		// log.Printf("spawn_clients_and_wait: client %d is done\n", cli)
+		//DPrintf("spawn_clients_and_wait: client %d is done\n", cli)
 		if ok == false {
 			t.Fatalf("failure")
 		}
@@ -181,6 +185,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 
 	ck := cfg.makeClient(cfg.All())
 
+	//用于退出循环
 	done_partitioner := int32(0)
 	done_clients := int32(0)
 	ch_partitioner := make(chan bool)
@@ -190,6 +195,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 	}
 	for i := 0; i < 3; i++ {
 		// log.Printf("Iteration %v\n", i)
+		//DPrintf("test: Iteration %v\n", i)
 		atomic.StoreInt32(&done_clients, 0)
 		atomic.StoreInt32(&done_partitioner, 0)
 		go spawn_clients_and_wait(t, cfg, nclients, func(cli int, myck *Clerk, t *testing.T) {
@@ -197,6 +203,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 			defer func() {
 				clnts[cli] <- j
 			}()
+			//先写 key-""，然后一直append/get，直到五秒后done_clients = 1
 			last := ""
 			key := strconv.Itoa(cli)
 			Put(cfg, myck, key, last)
@@ -204,17 +211,20 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 				if (rand.Int() % 1000) < 500 {
 					nv := "x " + strconv.Itoa(cli) + " " + strconv.Itoa(j) + " y"
 					// log.Printf("%d: client new append %v\n", cli, nv)
+					//DPrintf("test: %d: client new append %v, j = %v\n", cli, nv, j)
 					Append(cfg, myck, key, nv)
 					last = NextValue(last, nv)
 					j++
 				} else {
 					// log.Printf("%d: client new get %v\n", cli, key)
+					//DPrintf("test: %d: client new get %v, j = %v\n", cli, key, j)
 					v := Get(cfg, myck, key)
 					if v != last {
 						log.Fatalf("get wrong value, key %v, wanted:\n%v\n, got\n%v\n", key, last, v)
 					}
 				}
 			}
+			//DPrintf("test: finish loop.")
 		})
 
 		if partitions {
@@ -258,12 +268,14 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 		// log.Printf("wait for clients\n")
 		for i := 0; i < nclients; i++ {
 			// log.Printf("read from clients %d\n", i)
+			//DPrintf("test: read from clients %d\n", i)
 			j := <-clnts[i]
 			// if j < 10 {
 			// 	log.Printf("Warning: client %d managed to perform only %d put operations in 1 sec?\n", i, j)
 			// }
 			key := strconv.Itoa(i)
 			// log.Printf("Check %v for client %d\n", j, i)
+			//DPrintf("test: Check %v for client %d\n", j, i)
 			v := Get(cfg, ck, key)
 			checkClntAppends(t, i, v, j)
 		}
@@ -479,7 +491,15 @@ func TestOnePartition3A(t *testing.T) {
 	defer cfg.cleanup()
 	ck := cfg.makeClient(cfg.All())
 
+	DPrintf("before: all server log:")
+	for i, kvs := range cfg.kvservers {
+		DPrintf("%v, %v", i, kvs.rf.Log)
+	}
 	Put(cfg, ck, "1", "13")
+	DPrintf("after put 1->13:")
+	for i, kvs := range cfg.kvservers {
+		DPrintf("%v, %v", i, kvs.rf.Log)
+	}
 
 	cfg.begin("Test: progress in majority (3A)")
 
@@ -490,8 +510,13 @@ func TestOnePartition3A(t *testing.T) {
 	ckp2a := cfg.makeClient(p2) // connect ckp2a to p2
 	ckp2b := cfg.makeClient(p2) // connect ckp2b to p2
 
+	//1->14会发给新选举的leader
 	Put(cfg, ckp1, "1", "14")
 	check(cfg, t, ckp1, "1", "14")
+	DPrintf("after ckp1 put 1->14:")
+	for i, kvs := range cfg.kvservers {
+		DPrintf("%v, %v", i, kvs.rf.Log)
+	}
 
 	cfg.end()
 
@@ -499,26 +524,45 @@ func TestOnePartition3A(t *testing.T) {
 	done1 := make(chan bool)
 
 	cfg.begin("Test: no progress in minority (3A)")
+	//网络分区恢复以后才会写done0、done1
 	go func() {
+		//1->15不应该会被committed
 		Put(cfg, ckp2a, "1", "15")
+		//网络分区恢复以后才会执行
+		DPrintf("after ckp2a put 1->15:")
+		for i, kvs := range cfg.kvservers {
+			DPrintf("%v, %v", i, kvs.rf.Log)
+		}
 		done0 <- true
 	}()
 	go func() {
 		Get(cfg, ckp2b, "1") // different clerk in p2
+		DPrintf("after ckp2b get 1:")
+		for i, kvs := range cfg.kvservers {
+			DPrintf("%v, %v", i, kvs.rf.Log)
+		}
 		done1 <- true
 	}()
 
+	//正常情况下应该会超时
 	select {
 	case <-done0:
 		t.Fatalf("Put in minority completed")
 	case <-done1:
 		t.Fatalf("Get in minority completed")
 	case <-time.After(time.Second):
+		DPrintf("receive done0 done1 timeout")
 	}
 
 	check(cfg, t, ckp1, "1", "14")
+	//1->16和1->14一样会发给新选举的leader
 	Put(cfg, ckp1, "1", "16")
 	check(cfg, t, ckp1, "1", "16")
+
+	DPrintf("after ckp1 put 1->16:")
+	for i, kvs := range cfg.kvservers {
+		DPrintf("%v, %v", i, kvs.rf.Log)
+	}
 
 	cfg.end()
 
@@ -543,7 +587,9 @@ func TestOnePartition3A(t *testing.T) {
 	default:
 	}
 
-	check(cfg, t, ck, "1", "15")
+	//TODO 我认为最终结果应该是16， 新的leader 会把follower里term小的日志(key:1, value:15 term:1)清除掉
+	check(cfg, t, ck, "1", "16")
+	//check(cfg, t, ck, "1", "15")
 
 	cfg.end()
 }
