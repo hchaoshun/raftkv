@@ -1,11 +1,9 @@
 **raftkv is a distributed key-value store based on the raft protocol.**
 
-raftkv is written in Go and uses the [Raft][raft] consensus algorithm to manage a highly-available replicated log.
-
 Authors: Jachin Huang (hcsxiaohan@gmail.com)
 
 # Features
-* raftkv is written in Go and uses the [Raft][raft] consensus algorithm to manage a highly-available replicated log.
+* raftkv is written in Go and uses the Raft consensus algorithm to manage a highly-available replicated log.
 * The basic operations are `Put(key,value)`, `Get(key)`, `Append(key,value)`.
 * The fault-tolerant KV storage service is built on the basis of raft. The service can correctly handle client requests even if some nodes are wrong or the network partition.
 * KV storage is managed by shards, each shard handles its own read and write.
@@ -57,12 +55,8 @@ TODO
 ## Read performance
 TODO
 
-# Repository contents
-
-Guide to per files:
-
+# Next steps
 TODO
-
 
 
 
