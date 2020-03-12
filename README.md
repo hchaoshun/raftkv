@@ -42,6 +42,10 @@ TODO
 # Next steps
 TODO
 
+# References
+- [Raft Extended(2014)](https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf)
+
+
 
 
 
