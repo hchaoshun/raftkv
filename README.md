@@ -15,6 +15,8 @@ Authors: Jachin Huang (hcsxiaohan@gmail.com)
 * Does not support concurrent reads and writes.
 * During the shard migration process, you must wait for the migration to complete before using services.
 
+# System architecture
+![system architecture](https://github.com/hchaoshun/raftkv/blob/master/raft_stream.png)
 
 # Testing
 
