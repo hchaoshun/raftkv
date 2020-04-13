@@ -31,19 +31,6 @@ cd raft
 go test -run ''
 ```
 
-# Performance
-
-Here is a performance test report.
-
-## Setup
-TODO
-
-## Write performance
-TODO
-
-## Read performance
-TODO
-
 # Next steps
 * Writing a snapshot can take a significant amount of time, it can delay normal operations, using copy-on-write to solve it.
 
