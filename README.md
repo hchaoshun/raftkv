@@ -45,7 +45,7 @@ TODO
 TODO
 
 # Next steps
-TODO
+* Writing a snapshot can take a significant amount of time, it can delay normal operations, using copy-on-write to solve it.
 
 # References
 - [Raft Extended(2014)](https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf)
