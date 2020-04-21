@@ -1,0 +1,11 @@
+raft
+- 并发锁的粒度过大，控制粒度
+
+
+raftkv
+- kv数据加锁不支持并发读写，MVCC ？
+- InstallSnapshot过程中，会阻塞服务，copy on write ？
+
+shardkv
+- 在poll/pull/clean过程中均会占用lock导致不能正常提供服务，有没有办法解决?
+
