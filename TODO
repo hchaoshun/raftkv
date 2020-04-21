@@ -4,7 +4,7 @@ raft
 
 raftkv
 - kv数据加锁不支持并发读写，MVCC ？
-- InstallSnapshot过程中，会阻塞服务，copy on write ？
+- InstallSnapshot过程中，写盘时间过长会阻塞服务，copy on write， fork，子进程写盘，父进程响应客户请求
 
 shardkv
 - 在poll/pull/clean过程中均会占用lock导致不能正常提供服务，有没有办法解决?
